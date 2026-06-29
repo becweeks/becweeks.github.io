@@ -437,19 +437,8 @@
   </div>
 
   <script>
-    const queries = ['bicycle riding','academic research','library books','cycling','scientist thinking','bicycle vintage','studying books','research lab'];
-    const q = queries[Math.floor(Math.random() * queries.length)];
-    fetch('https://api.giphy.com/v1/gifs/search?api_key=dc6zaTOxFJmzC&q=' + encodeURIComponent(q) + '&limit=20&rating=g')
-      .then(r => r.json())
-      .then(data => {
-        const gifs = data.data;
-        if (gifs && gifs.length > 0) {
-          const gif = gifs[Math.floor(Math.random() * gifs.length)];
-          document.getElementById('moodGif').innerHTML = '<img src="' + gif.images.fixed_height_small.url + '" alt="mood gif">';
-          document.getElementById('moodTag').textContent = '#' + q.replace(' ', '');
-        }
-      })
-      .catch(() => { document.getElementById('moodGif').innerHTML = '<div class="mood-loading">[gif unavailable]</div>'; });
-  </script>
+  document.getElementById('moodGif').innerHTML = '<img src="https://media.giphy.com/media/v1.Y2lkPTc5MGI3NjExaHV6em9vNGh2MGJzazc4Y3ExdjZvYm5wZmpjc2c1ejA4eHhxZmJxMSZlcD12MV9naWZzX3NlYXJjaCZjdD1n/xT0GqrJNbZkRcr2Jgc/giphy.gif" alt="mood gif">';
+  document.getElementById('moodTag').textContent = '#vibes';
+</script>
 </body>
 </html>
