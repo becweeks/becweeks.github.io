@@ -1,4 +1,15 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32" width="32" height="32">
-  <rect width="32" height="32" rx="7" fill="#BF5E3B"/>
-  <text x="16" y="22.5" font-family="Georgia, serif" font-size="13" font-weight="400" fill="#F9F2E7" text-anchor="middle" letter-spacing="0.5">BW</text>
+  <defs>
+    <linearGradient id="sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#6FCBEC"/>
+      <stop offset="1" stop-color="#4FB2DD"/>
+    </linearGradient>
+    <linearGradient id="gold" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#FFD75E"/>
+      <stop offset="1" stop-color="#F2B417"/>
+    </linearGradient>
+  </defs>
+  <rect width="32" height="32" rx="7" fill="url(#sky)"/>
+  <path d="M16 5.3 L18.70 12.48 L26.37 12.83 L20.37 17.62 L22.41 25.02 L16 20.80 L9.59 25.02 L11.63 17.62 L5.63 12.83 L13.30 12.48 Z"
+        fill="url(#gold)" stroke="#3D2817" stroke-width="1.7" stroke-linejoin="round"/>
 </svg>
