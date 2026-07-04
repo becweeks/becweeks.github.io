@@ -30,6 +30,7 @@
     padding:14px 12px 40px;
     -webkit-user-select:none; user-select:none; -webkit-tap-highlight-color:transparent;
   }
+  body.playing{ overflow:hidden; touch-action:none; }   /* while running, a tap anywhere jumps and nothing scrolls */
   h1,.chip,.ov-title,.ov-btn{ font-family:'Baloo 2',cursive; }
   .topbar{
     width:100%; max-width:920px; display:flex; align-items:center; justify-content:space-between;
@@ -106,7 +107,7 @@
     .ov-title{ font-size:1.2rem; margin-bottom:4px; }
     .ov-sub{ font-size:0.8rem; line-height:1.35; max-width:24em; }
     .ov-btn{ padding:8px 22px; font-size:0.95rem; }
-    .keys{ font-size:0.72rem; margin-top:6px; }
+    .keys{ font-size:0.72rem; margin-top:14px; }
   }
 </style>
 </head>
@@ -309,16 +310,23 @@
   window.addEventListener('keyup', e=>{
     if(e.code==='Space' || e.code==='ArrowUp' || e.code==='KeyW'){ e.preventDefault(); release(); }
   }, {passive:false});
-  const stage = document.getElementById('stage');
-  stage.addEventListener('pointerdown', e=>{ e.preventDefault(); press(); }, {passive:false});
-  stage.addEventListener('pointerup', e=>{ e.preventDefault(); release(); }, {passive:false});
+  // tap ANYWHERE to jump / start (like the Dino game) — but let links and the button behave normally
+  document.addEventListener('pointerdown', e=>{
+    if(e.target.closest('a, button')) return;
+    e.preventDefault(); press();
+  }, {passive:false});
+  document.addEventListener('pointerup', e=>{
+    if(e.target.closest('a, button')) return;
+    release();
+  }, {passive:false});
   document.getElementById('ov-btn').addEventListener('pointerdown', e=>{ e.stopPropagation(); e.preventDefault(); press(); });
 
   // ---- game flow ----
   const overlay = document.getElementById('overlay');
-  function startGame(){ resetGame(); state='playing'; overlay.classList.add('hidden'); }
+  function startGame(){ resetGame(); state='playing'; overlay.classList.add('hidden'); document.body.classList.add('playing'); }
   function gameOver(){
     state='over';
+    document.body.classList.remove('playing');
     shakeT = 0; flash = 0;   // stop any in-progress impact effects so the end screen sits still
     if(Math.floor(distance) > best){ best = Math.floor(distance); try{ localStorage.setItem('bkr_best', String(best)); }catch(e){} }
     sfx.dead();
