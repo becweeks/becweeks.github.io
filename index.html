@@ -35,8 +35,8 @@
   :root{
     --sky-top:#5EC1E8;
     --sky-bot:#BDEBF5;
-    --yoshi:#57AE3E;
-    --yoshi-dark:#3D7E2C;
+    --yosh:#57AE3E;
+    --yosh-dark:#3D7E2C;
     --egg-pink:#F4A9C7;
     --coin:#FFC93C;
     --coin-dark:#D69A12;
@@ -220,11 +220,56 @@
     display:block;
     width:64px;
     height:6px;
-    background:var(--yoshi);
+    background:var(--yosh);
     border:2px solid var(--ink);
     border-radius:4px;
     margin:12px auto 24px;
   }
+
+  /* ===== ARCADE MARQUEE (PLAY THE GAME) ===== */
+  .arcade-cta{ padding-top:6px; padding-bottom:20px; }
+  .marquee{
+    display:block; text-decoration:none; text-align:center;
+    background:linear-gradient(180deg, #2B4E1F, #16300F);
+    border:5px solid var(--ink); border-radius:18px;
+    box-shadow:0 8px 0 var(--wood-dark), 0 14px 26px rgba(0,0,0,0.28);
+    padding:34px 22px 42px; position:relative; overflow:hidden;
+    transition:transform 0.18s ease, box-shadow 0.18s ease;
+  }
+  .marquee:hover, .marquee:focus-visible{
+    transform:translateY(-4px); outline:none;
+    box-shadow:0 12px 0 var(--wood-dark), 0 20px 34px rgba(0,0,0,0.34);
+  }
+  .marquee::before, .marquee::after{   /* marquee light bulbs */
+    content:""; position:absolute; left:0; right:0; height:8px;
+    background-image:radial-gradient(circle, var(--coin) 0 3px, transparent 3.5px);
+    background-size:24px 100%; background-position:center; opacity:0.9;
+  }
+  .marquee::before{ top:9px; }
+  .marquee::after{ bottom:9px; }
+  .marquee-eyebrow{
+    font-family:'Baloo 2', cursive; font-weight:700; color:var(--coin);
+    letter-spacing:2px; font-size:0.82rem; margin-bottom:10px;
+    animation:blink 1.2s steps(1) infinite;
+  }
+  .marquee-title{
+    font-family:'Baloo 2', cursive; font-weight:800; color:var(--white);
+    font-size:clamp(1.4rem, 4.5vw, 2.2rem); line-height:1.05;
+    text-shadow:2px 2px 0 var(--ink), -1px -1px 0 var(--ink), 1px -1px 0 var(--ink), -1px 1px 0 var(--ink);
+  }
+  .marquee-title em{ color:var(--coin); font-style:italic; }
+  .marquee-sub{
+    font-family:'Baloo 2', cursive; font-weight:700; color:#DCEFC4;
+    font-size:clamp(1rem, 3vw, 1.35rem); margin:4px 0 20px;
+  }
+  .marquee-btn{
+    display:inline-block; font-family:'Baloo 2', cursive; font-weight:800;
+    color:var(--wood-dark); background:var(--coin);
+    border:3px solid var(--ink); border-radius:14px;
+    box-shadow:0 5px 0 var(--coin-dark);
+    padding:12px 28px; font-size:clamp(1rem, 2.6vw, 1.2rem);
+  }
+  .marquee:hover .marquee-btn, .marquee:focus-visible .marquee-btn{ background:#FFD75E; }
 
   /* ===== PAINTING WALL (NAV) ===== */
   .wall{
@@ -289,7 +334,7 @@
     text-align:center;
     text-decoration:none;
     color:var(--ink);
-    box-shadow:0 6px 0 var(--yoshi-dark);
+    box-shadow:0 6px 0 var(--yosh-dark);
     transition:transform 0.2s ease;
     display:flex;
     flex-direction:column;
@@ -302,7 +347,7 @@
     position:absolute;
     top:0; left:0; right:0;
     height:6px;
-    background:var(--yoshi);
+    background:var(--yosh);
   }
   .badge:hover{ transform:translateY(-5px); }
   .badge .icon-pop{
@@ -325,7 +370,7 @@
   .sign{
     background:linear-gradient(180deg,#A9773F,#8B5A2B);
     border:6px solid var(--ink);
-    border-top:10px solid var(--yoshi);
+    border-top:10px solid var(--yosh);
     border-radius:14px;
     padding:26px 28px 30px;
     box-shadow:0 8px 0 var(--wood-dark);
@@ -409,7 +454,7 @@
     <!--
       One reusable puffy cloud, defined once. It's a cluster of overlapping
       circles (rounded lobes top AND bottom, no flat base) with a tinted
-      underside layer behind a white top layer = classic Mario/Yoshi cloud.
+      underside layer behind a white top layer = classic Mario/Yosh cloud.
       Each .cloud below just <use>s it at a different size/height/speed.
     -->
     <svg width="0" height="0" style="position:absolute" aria-hidden="true">
@@ -520,6 +565,16 @@
         <span class="badge-desc">Tools of Thought</span>
       </a>
     </div>
+  </section>
+
+  <!-- ARCADE MARQUEE / PLAY THE GAME -->
+  <section class="section arcade-cta">
+    <a class="marquee" href="game.html">
+      <div class="marquee-eyebrow">🕹️ INSERT COIN</div>
+      <div class="marquee-title">This site only <em>looks</em> like a video game.</div>
+      <div class="marquee-sub">Want to play a real one?</div>
+      <span class="marquee-btn">▶ PLAY BICYCLE KINGDOM RUN</span>
+    </a>
   </section>
 
   <footer>

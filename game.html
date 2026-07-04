@@ -1,0 +1,620 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>Bicycle Kingdom Run — Bec Weeks</title>
+<meta name="description" content="A little endless-runner minigame on becweeks.com — run, jump, collect gears, and build a faster bike.">
+<meta name="theme-color" content="#1E3815">
+<link rel="icon" href="/favicon.svg" type="image/svg+xml">
+<link rel="icon" href="/favicon-32.png" sizes="32x32" type="image/png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Nunito:wght@600;700;800&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --sky-top:#5EC1E8; --sky-bot:#BDEBF5;
+    --yosh:#57AE3E; --yosh-dark:#3D7E2C;
+    --coin:#FFC93C; --coin-dark:#D69A12;
+    --wood:#8B5A2B; --wood-dark:#5E3B1A;
+    --stone:#EFE4CC; --ink:#3D2817; --white:#FFFDF6;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  body{
+    font-family:'Nunito',sans-serif; color:var(--ink);
+    background:linear-gradient(180deg,var(--sky-top) 0%,var(--sky-bot) 45%,#DCEFC4 72%,#C3E8AE 100%);
+    min-height:100vh; overflow-x:hidden;
+    display:flex; flex-direction:column; align-items:center;
+    padding:14px 12px 40px;
+  }
+  h1,.chip,.ov-title,.ov-btn{ font-family:'Baloo 2',cursive; }
+  .topbar{
+    width:100%; max-width:920px; display:flex; align-items:center; justify-content:space-between;
+    gap:10px; margin-bottom:12px; flex-wrap:wrap;
+  }
+  .home-link{
+    font-family:'Baloo 2',cursive; font-weight:700; font-size:0.95rem;
+    color:var(--wood-dark); text-decoration:none;
+    background:var(--white); border:2px solid var(--coin-dark); border-radius:20px;
+    padding:5px 14px; white-space:nowrap;
+  }
+  .home-link:hover{ background:#fff6df; }
+  h1{
+    font-weight:800; color:var(--white); font-size:clamp(1.2rem,4vw,1.7rem);
+    text-shadow:2px 2px 0 var(--ink),-1px -1px 0 var(--ink),1px -1px 0 var(--ink),-1px 1px 0 var(--ink);
+    letter-spacing:0.5px; text-align:center;
+  }
+  .hud{
+    width:100%; max-width:920px; display:flex; gap:10px; margin-bottom:8px;
+    align-items:center; flex-wrap:wrap; justify-content:center;
+  }
+  .chip{
+    display:flex; align-items:center; gap:7px;
+    background:var(--white); border:2px solid var(--coin-dark); border-radius:18px;
+    padding:4px 13px; font-weight:700; color:var(--wood-dark); font-size:0.92rem; white-space:nowrap;
+  }
+  .meter-wrap{
+    flex:1; min-width:150px; max-width:300px; display:flex; align-items:center; gap:8px;
+    background:var(--white); border:2px solid var(--coin-dark); border-radius:18px; padding:4px 12px;
+    font-family:'Baloo 2',cursive; font-weight:700; color:var(--wood-dark); font-size:0.82rem;
+  }
+  .meter{ flex:1; height:10px; background:#e7dcc4; border-radius:6px; overflow:hidden; border:1px solid var(--stone); }
+  .meter-fill{ height:100%; width:0%; background:linear-gradient(90deg,var(--yosh),var(--yosh-dark)); transition:width 0.12s linear; }
+  .stage{
+    position:relative; width:100%; max-width:920px;
+    border:5px solid var(--ink); border-radius:16px; overflow:hidden;
+    box-shadow:0 10px 0 var(--wood-dark), 0 16px 30px rgba(0,0,0,0.28);
+    background:#000; line-height:0; touch-action:manipulation;
+  }
+  canvas{ display:block; width:100%; height:auto; }
+  .overlay{
+    position:absolute; inset:0; display:flex; flex-direction:column;
+    align-items:center; justify-content:center; text-align:center; gap:16px;
+    background:rgba(30,56,21,0.55); color:var(--white); padding:20px;
+    -webkit-backdrop-filter:blur(2px); backdrop-filter:blur(2px);
+  }
+  .overlay.hidden{ display:none; }
+  .ov-title{
+    font-weight:800; font-size:clamp(1.6rem,6vw,2.6rem);
+    text-shadow:3px 3px 0 var(--ink),-1px -1px 0 var(--ink),1px -1px 0 var(--ink),-1px 1px 0 var(--ink);
+    letter-spacing:0.5px; margin-bottom:12px;
+  }
+  .ov-sub{ font-family:'Nunito',sans-serif; font-weight:700; font-size:clamp(0.9rem,2.6vw,1.05rem); max-width:26em; line-height:1.5; }
+  .ov-stats{ font-family:'Baloo 2',cursive; font-weight:700; font-size:clamp(1rem,3vw,1.25rem); }
+  .ov-btn{
+    font-weight:800; font-size:clamp(1rem,3.2vw,1.25rem); color:var(--wood-dark);
+    background:var(--coin); border:3px solid var(--ink); border-radius:16px;
+    box-shadow:0 5px 0 var(--coin-dark); padding:10px 26px; cursor:pointer;
+    animation:pulse 1.3s ease-in-out infinite;
+  }
+  .ov-btn:active{ transform:translateY(3px); box-shadow:0 2px 0 var(--coin-dark); }
+  @keyframes pulse{ 50%{ transform:scale(1.05); } }
+  .keys{ font-family:'Nunito',sans-serif; font-weight:600; font-size:0.85rem; opacity:0.9; margin-top:14px; }
+  #bike-label{ min-width:52px; text-align:left; }
+  .foot{ margin-top:16px; font-size:0.85rem; color:var(--wood-dark); text-align:center; }
+  .foot a{ color:var(--wood-dark); }
+</style>
+</head>
+<body>
+  <div class="topbar">
+    <a class="home-link" href="index.html">◄ Back to becweeks.com</a>
+    <h1>🚲 BICYCLE KINGDOM RUN</h1>
+    <span style="width:150px;max-width:30%"></span>
+  </div>
+
+  <div class="hud">
+    <div class="chip"><span>🏁</span> <span id="hud-dist">0 m</span></div>
+    <div class="chip"><span>⚙️</span> <span id="hud-tok">0</span></div>
+    <div class="chip"><span>⭐</span> BEST <span id="hud-best">0 m</span></div>
+    <div class="meter-wrap"><span>🚲</span><span id="bike-label">on foot</span><div class="meter"><div class="meter-fill" id="bike-meter"></div></div></div>
+  </div>
+
+  <div class="stage" id="stage">
+    <canvas id="game" width="960" height="540"></canvas>
+    <div class="overlay" id="overlay">
+      <div class="ov-title" id="ov-title">BICYCLE KINGDOM RUN</div>
+      <div class="ov-sub" id="ov-sub">Run right, jump the pipes and chasms, and collect ⚙️ gears. Gather enough to build a bicycle — then keep collecting gears to add speeds and ride faster!</div>
+      <button class="ov-btn" id="ov-btn">▶ START</button>
+      <div class="keys">Jump: Space / ↑ / Tap &nbsp;·&nbsp; hold to jump higher</div>
+    </div>
+  </div>
+
+  <div class="foot"><a href="index.html">◄ Back to becweeks.com</a></div>
+
+<script>
+(function(){
+  "use strict";
+  const canvas = document.getElementById('game');
+  const ctx = canvas.getContext('2d');
+  const VW = 960, VH = 540;
+  const GROUND_Y = 430;               // top of the ground band
+  const GRAV = 2600;
+  const JUMP_V = -910, BIKE_JUMP_V = -1010;
+  const BASE_SPEED = 320, MAX_SPEED = 1650;   // high safety ceiling (keeps physics sane); the run ends well before this
+  const AIRTIME = 0.69;               // approx, for gap sizing
+  const FIRST_BIKE = 10, PER_GEAR = 10, MAX_GEARS = 5;   // gears to build the bike, then per added speed, up to a 5-speed
+  const MIN_LAND = 120;   // never leave a landing strip narrower than this
+  const PLAYER_X = 195, PW = 44, PH = 52;
+
+  // ---- palette ----
+  const C = {
+    skyTop:'#5EC1E8', skyBot:'#BDEBF5',
+    yosh:'#57AE3E', yoshDark:'#3D7E2C', yoshLight:'#7BC85E',
+    coin:'#FFC93C', coinDark:'#D69A12',
+    wood:'#8B5A2B', woodDark:'#5E3B1A', pit:'#243b16',
+    stone:'#EFE4CC', ink:'#3D2817', white:'#FFFDF6', belly:'#EAF7DE',
+    silver:'#C7CED6', silverDark:'#9AA2AC', silverEdge:'#6C737C'
+  };
+  const GEAR_COLORS = ['#57AE3E','#3FA7C4','#8A6BC9','#E0872B','#D6473F'];  // bike frame color per speed (1..5)
+
+  // ---- audio (tiny, safe) ----
+  let actx = null;
+  function initAudio(){ if(actx) return; try{ actx = new (window.AudioContext||window.webkitAudioContext)(); }catch(e){ actx=null; } }
+  function beep(freq, dur, type, vol, when){
+    if(!actx) return;
+    try{
+      const t = actx.currentTime + (when||0);
+      const o = actx.createOscillator(), g = actx.createGain();
+      o.type = type||'square'; o.frequency.value = freq;
+      g.gain.value = vol||0.04; o.connect(g); g.connect(actx.destination);
+      o.start(t); g.gain.exponentialRampToValueAtTime(0.0001, t+dur); o.stop(t+dur);
+    }catch(e){}
+  }
+  const sfx = {
+    jump(){ beep(520,0.12,'square',0.035); },
+    coin(){ beep(920,0.07,'square',0.04); beep(1300,0.09,'square',0.035,0.06); },
+    power(){ beep(660,0.09,'square',0.05); beep(880,0.09,'square',0.05,0.09); beep(1180,0.14,'square',0.05,0.18); },
+    hit(){ beep(180,0.28,'sawtooth',0.06); },
+    dead(){ beep(300,0.15,'sawtooth',0.06); beep(160,0.4,'sawtooth',0.06,0.14); }
+  };
+
+  // ---- state ----
+  let state = 'start';   // 'start' | 'playing' | 'over'
+  let best = 0;
+  try{ best = parseInt(localStorage.getItem('bkr_best')||'0',10) || 0; }catch(e){}
+
+  const player = { y:0, vy:0, onGround:true, onBike:false, bikeGears:0, falling:false, invuln:0, timeSinceGround:0, legPhase:0, wheelPhase:0 };
+  let obstacles = [], gaps = [], tokens = [], platforms = [];
+  let clouds = [];
+  let speed = BASE_SPEED, distance = 0, scrollX = 0, gears = 0, gearMeter = 0;
+  let distSinceSpawn = 0, nextSpawnGap = 720, gapStreak = 0;   // safe runway at start
+  let jumpBuffer = 0, jumpHeld = false, shakeT = 0, flash = 0;
+
+  function resetGame(){
+    obstacles = []; gaps = []; tokens = []; platforms = [];
+    speed = BASE_SPEED; distance = 0; scrollX = 0; gears = 0; gearMeter = 0;
+    distSinceSpawn = 0; nextSpawnGap = 720; gapStreak = 0;
+    player.y = GROUND_Y - PH; player.vy = 0; player.onGround = true;
+    player.onBike = false; player.bikeGears = 0; player.falling = false; player.invuln = 0; player.timeSinceGround = 0;
+    jumpBuffer = 0; shakeT = 0; flash = 0;
+  }
+
+  function initClouds(){
+    clouds = [];
+    for(let i=0;i<5;i++) clouds.push({ x:Math.random()*VW, y:30+Math.random()*150, s:0.6+Math.random()*0.8 });
+  }
+  initClouds();
+
+  // ---- spawning ----
+  const rand = (a,b)=> a + Math.random()*(b-a);
+  const clamp = (v,a,b)=> Math.max(a, Math.min(b, v));
+  function onFootReach(){ return BASE_SPEED_now() * AIRTIME; }
+  function BASE_SPEED_now(){ return speed; } // on-foot pace equals current world speed baseline
+
+  function spawnGears(centerX, baseY, peak){
+    const R = 13;
+    if(Math.random() < 0.68){       // usually just one gear (upgrades take a little longer)
+      tokens.push({ x:centerX, y:baseY - peak, r:R, got:false });
+    } else {                        // sometimes a wide arc of three
+      const spread = 62;
+      tokens.push({ x:centerX - spread, y:baseY - peak*0.5, r:R, got:false });
+      tokens.push({ x:centerX,          y:baseY - peak,     r:R, got:false });
+      tokens.push({ x:centerX + spread, y:baseY - peak*0.5, r:R, got:false });
+    }
+  }
+  function spawnPlatformCrossing(){
+    const reach = speed * AIRTIME;
+    const lift = rand(58, 84);
+    const Lw = clamp(reach*0.42, 90, 170);
+    const d1 = clamp(reach*0.34, 62, 160);   // hop up onto the ledge
+    const d2 = clamp(reach*0.44, 84, 210);   // and off to the far side
+    const Xg = VW + 40;
+    gaps.push({ x:Xg, w:d1 + Lw + d2 });
+    platforms.push({ x:Xg + d1, y:GROUND_Y - lift, w:Lw });
+    spawnGears(Xg + d1 + Lw*0.5, GROUND_Y - lift - 20, 40);
+    return d1 + Lw + d2;
+  }
+  function spawnFeature(){
+    const bike = player.onBike;
+    const canPlat = distance > 220;
+    const r = Math.random();
+    const pPipe  = bike ? 0.10 : 0.40;
+    const pChasm = pPipe + (bike ? 0.46 : 0.26);
+    const pPlat  = pChasm + (canPlat ? (bike ? 0.18 : 0.16) : 0);
+    let type = r < pPipe ? 'pipe' : r < pChasm ? 'chasm' : r < pPlat ? 'platform' : 'gears';
+    // never more than 2 gap-type features in a row — a wall of chasms is brutal, especially on the bike
+    if((type==='chasm' || type==='platform') && gapStreak >= 2) type = 'gears';
+    gapStreak = (type==='chasm' || type==='platform') ? gapStreak + 1 : 0;
+
+    let footprint = 100;
+    if(type==='pipe'){
+      const h = rand(38, 84), w = rand(36, 52);
+      obstacles.push({ x:VW+40, y:GROUND_Y-h, w, h, hit:false });
+      if(Math.random()<0.6) spawnGears(VW+40 + w/2, GROUND_Y-24, h+62);
+      footprint = w;
+    } else if(type==='chasm'){
+      // chasm — grows wider as speed climbs; wider still on the bike (but always just clearable on foot)
+      const reach = speed * AIRTIME;
+      let lo, hi;
+      if(bike){ hi = Math.min(460, reach*0.66); lo = Math.max(140, hi*0.55); }
+      else    { hi = Math.min(360, reach*0.62); lo = Math.max(90,  hi*0.50); }
+      const w = rand(lo, hi);
+      gaps.push({ x:VW+40, w });
+      spawnGears(VW+40 + w/2, GROUND_Y-26, 118);
+      footprint = w;
+    } else if(type==='platform'){
+      // hop up onto a floating ledge to cross a wide chasm
+      footprint = spawnPlatformCrossing();
+    } else {
+      // gear reward hop on flat ground (also the forced breather after two gaps)
+      spawnGears(VW+40 + 60, GROUND_Y-26, rand(88,120));
+      footprint = 150;
+    }
+    // always leave a comfortable landing strip after a feature — never a tiny sliver
+    const land = Math.max(MIN_LAND, rand(160, 320) - Math.min(distance*0.04, 130));
+    nextSpawnGap = footprint + land;
+  }
+
+  // ---- support / ground ----
+  function supportedAt(worldCenterX){
+    for(const g of gaps){ if(worldCenterX > g.x && worldCenterX < g.x + g.w) return false; }
+    return true;
+  }
+
+  // ---- input ----
+  function doJump(){
+    const grounded = player.onGround || player.timeSinceGround < 0.09;
+    if(!grounded) return;
+    player.vy = player.onBike ? BIKE_JUMP_V : JUMP_V;
+    player.onGround = false; player.timeSinceGround = 0.2;
+    sfx.jump();
+  }
+  function press(){
+    initAudio(); if(actx && actx.state==='suspended') actx.resume();
+    if(state==='playing'){ jumpBuffer = 0.12; jumpHeld = true; }
+    else { startGame(); }
+  }
+  function release(){
+    jumpHeld = false;
+    if(state==='playing' && player.vy < 0) player.vy *= 0.45; // variable jump height
+  }
+  window.addEventListener('keydown', e=>{
+    if(e.code==='Space' || e.code==='ArrowUp' || e.code==='KeyW'){ e.preventDefault(); if(!e.repeat) press(); }
+  }, {passive:false});
+  window.addEventListener('keyup', e=>{
+    if(e.code==='Space' || e.code==='ArrowUp' || e.code==='KeyW'){ e.preventDefault(); release(); }
+  }, {passive:false});
+  const stage = document.getElementById('stage');
+  stage.addEventListener('pointerdown', e=>{ e.preventDefault(); press(); }, {passive:false});
+  stage.addEventListener('pointerup', e=>{ e.preventDefault(); release(); }, {passive:false});
+  document.getElementById('ov-btn').addEventListener('pointerdown', e=>{ e.stopPropagation(); e.preventDefault(); press(); });
+
+  // ---- game flow ----
+  const overlay = document.getElementById('overlay');
+  function startGame(){ resetGame(); state='playing'; overlay.classList.add('hidden'); }
+  function gameOver(){
+    state='over';
+    shakeT = 0; flash = 0;   // stop any in-progress impact effects so the end screen sits still
+    if(Math.floor(distance) > best){ best = Math.floor(distance); try{ localStorage.setItem('bkr_best', String(best)); }catch(e){} }
+    sfx.dead();
+    document.getElementById('ov-title').textContent = 'GAME OVER';
+    document.getElementById('ov-sub').innerHTML =
+      '<span class="ov-stats">🏁 '+Math.floor(distance)+' m &nbsp;·&nbsp; ⚙️ '+gears+' &nbsp;·&nbsp; ⭐ best '+best+' m</span>';
+    document.getElementById('ov-btn').textContent = '▶ RUN AGAIN';
+    document.querySelector('.keys').textContent = 'Jump: Space / ↑ / Tap · hold to jump higher';
+    overlay.classList.remove('hidden');
+  }
+
+  // ---- update ----
+  function update(dt){
+    if(state!=='playing') return;
+
+    // committed chasm fall: the world freezes and the character drops down the pit, then game over
+    if(player.falling){
+      player.vy += GRAV*dt; player.y += player.vy*dt;
+      if(shakeT>0) shakeT -= dt; if(flash>0) flash -= dt;
+      if(player.y > VH + 60) return gameOver();
+      return;
+    }
+
+    // difficulty: speed keeps climbing (no practical cap) so rising speed is what ends the run
+    speed = Math.min(MAX_SPEED, BASE_SPEED + (scrollX/24)*0.20);   // ramp tied to real distance travelled, not score
+    const mult = player.bikeGears === 0 ? 1 : (1.04 + player.bikeGears*0.11);   // more gears = more speed
+    const eff = speed * mult;
+
+    // jump (buffer + coyote)
+    jumpBuffer -= dt;
+    if(jumpBuffer > 0){ doJump(); jumpBuffer = 0; }
+
+    // physics
+    const prevFeet = player.y + PH;
+    player.vy += GRAV*dt;
+    player.y += player.vy*dt;
+
+    // landing resolution — one-way platforms first, then solid ground; chasms are fatal
+    const feet = player.y + PH;
+    const groundHere = supportedAt(PLAYER_X + PW*0.5);
+    let landY = null;
+    for(const p of platforms){                 // land on a ledge only when dropping onto its top from above
+      if(player.vy >= 0 && prevFeet <= p.y + 8 && feet >= p.y &&
+         PLAYER_X + PW > p.x + 3 && PLAYER_X < p.x + p.w - 3){
+        if(landY === null || p.y < landY) landY = p.y;
+      }
+    }
+    for(const o of obstacles){                  // you can clear a pipe and come down to stand on top of it
+      if(player.vy >= 0 && prevFeet <= o.y + 8 && feet >= o.y &&
+         PLAYER_X + PW > o.x + 3 && PLAYER_X < o.x + o.w - 3){
+        if(landY === null || o.y < landY) landY = o.y;
+      }
+    }
+    if(landY === null && groundHere && player.vy >= 0 && feet >= GROUND_Y) landY = GROUND_Y;
+    if(landY !== null){
+      player.y = landY - PH; player.vy = 0; player.onGround = true; player.timeSinceGround = 0;
+    } else {
+      player.onGround = false; player.timeSinceGround += dt;
+      // over a pit (no ground, nothing caught us) and dropped to ground level — commit to the fall
+      if(!groundHere && feet >= GROUND_Y && player.timeSinceGround > 0.09){ player.falling = true; return; }
+    }
+
+    // scroll world
+    const dx = eff*dt;
+    for(const o of obstacles) o.x -= dx;
+    for(const g of gaps) g.x -= dx;
+    for(const t of tokens) t.x -= dx;
+    for(const p of platforms) p.x -= dx;
+    for(const c of clouds){ c.x -= dx*0.18*c.s; if(c.x < -160){ c.x = VW+120; c.y = 30+Math.random()*150; c.s=0.6+Math.random()*0.8; } }
+    distance += dx/24; scrollX += dx;   // ~24px per metre
+
+    // spawning
+    distSinceSpawn += dx;
+    if(distSinceSpawn >= nextSpawnGap){ distSinceSpawn = 0; spawnFeature(); }
+
+    // cull
+    obstacles = obstacles.filter(o=> o.x + o.w > -60);
+    gaps = gaps.filter(g=> g.x + g.w > -60);
+    platforms = platforms.filter(p=> p.x + p.w > -60);
+    tokens = tokens.filter(t=> t.x + t.r > -40);
+
+    // gear collection — build the bike, then keep adding speeds
+    for(const t of tokens){
+      if(t.got) continue;
+      if(PLAYER_X < t.x + t.r && PLAYER_X + PW > t.x - t.r &&
+         player.y < t.y + t.r && player.y + PH > t.y - t.r){
+        t.got = true; gears++; distance += 2; sfx.coin(); gearMeter++;
+        if(player.bikeGears === 0){
+          if(gearMeter >= FIRST_BIKE){ player.bikeGears = 1; player.onBike = true; gearMeter = 0; player.invuln = 0.6; flash = 0.3; sfx.power(); }
+        } else if(player.bikeGears < MAX_GEARS){
+          if(gearMeter >= PER_GEAR){ player.bikeGears++; gearMeter = 0; flash = 0.22; sfx.power(); }
+        } else {
+          gearMeter = PER_GEAR;   // maxed out at a 5-speed
+        }
+      }
+    }
+    tokens = tokens.filter(t=> !t.got);
+
+    // pipe collision — landing on top is safe (handled by the landing pass); only a real side/body hit hurts
+    if(player.invuln > 0) player.invuln -= dt;
+    for(const o of obstacles){
+      if(o.hit) continue;
+      const ovX = Math.min(PLAYER_X+PW, o.x+o.w) - Math.max(PLAYER_X, o.x);
+      const ovY = Math.min(player.y+PH, o.y+o.h) - Math.max(player.y, o.y);
+      if(ovX > 6 && ovY > 8){          // ovY≈0 when resting on top; ovX≈0 when grazing off the back edge
+        if(player.invuln > 0) continue;
+        if(player.onBike){ player.onBike = false; player.bikeGears = 0; gearMeter = 0; player.invuln = 1.1; o.hit = true; shakeT = 0.3; sfx.hit(); }
+        else { shakeT = 0.4; return gameOver(); }
+      }
+    }
+
+    // animation
+    if(player.onGround) player.legPhase += dx*0.055;
+    player.wheelPhase += dx*0.03;
+    if(shakeT>0) shakeT -= dt;
+    if(flash>0) flash -= dt;
+  }
+
+  // ---- drawing ----
+  function roundRect(x,y,w,h,r){ ctx.beginPath(); ctx.moveTo(x+r,y); ctx.arcTo(x+w,y,x+w,y+h,r); ctx.arcTo(x+w,y+h,x,y+h,r); ctx.arcTo(x,y+h,x,y,r); ctx.arcTo(x,y,x+w,y,r); ctx.closePath(); }
+
+  function drawSky(){
+    const g = ctx.createLinearGradient(0,0,0,VH);
+    g.addColorStop(0,C.skyTop); g.addColorStop(0.6,C.skyBot); g.addColorStop(1,'#D7EFC0');
+    ctx.fillStyle = g; ctx.fillRect(0,0,VW,VH);
+  }
+  function drawCloud(x,y,s){
+    ctx.fillStyle = 'rgba(255,255,255,0.92)';
+    const r = 22*s;
+    ctx.beginPath();
+    ctx.arc(x, y, r, 0, 7); ctx.arc(x+r*1.1, y-r*0.5, r*1.25, 0, 7);
+    ctx.arc(x+r*2.4, y, r*1.05, 0, 7); ctx.arc(x+r*1.2, y+r*0.4, r*1.1, 0, 7);
+    ctx.fill();
+  }
+  function drawHills(){
+    ctx.fillStyle = 'rgba(123,200,94,0.55)';
+    const spacing = 260, off = (scrollX*0.4) % spacing;
+    for(let x=-off-spacing; x<VW+spacing; x+=spacing){
+      ctx.beginPath(); ctx.arc(x+spacing/2, GROUND_Y+10, 130, Math.PI, 0); ctx.fill();
+    }
+  }
+  function drawGround(){
+    // full ground band
+    ctx.fillStyle = C.wood;
+    ctx.fillRect(0, GROUND_Y+14, VW, VH-GROUND_Y);
+    ctx.fillStyle = C.yosh;
+    ctx.fillRect(0, GROUND_Y, VW, 20);
+    ctx.fillStyle = C.yoshDark;
+    ctx.fillRect(0, GROUND_Y+16, VW, 5);
+    // grass speckle
+    ctx.fillStyle = C.yoshLight;
+    const off = (scrollX) % 40;
+    for(let x=-off; x<VW; x+=40){ ctx.fillRect(x, GROUND_Y+3, 14, 4); }
+    // carve chasms
+    for(const g of gaps){
+      const gx = g.x, gw = g.w;
+      // pit background (sky through the hole)
+      const grad = ctx.createLinearGradient(0,GROUND_Y,0,VH);
+      grad.addColorStop(0, C.skyBot); grad.addColorStop(1, C.pit);
+      ctx.fillStyle = grad; ctx.fillRect(gx, GROUND_Y, gw, VH-GROUND_Y);
+      // dirt edges
+      ctx.fillStyle = C.woodDark;
+      ctx.fillRect(gx-4, GROUND_Y, 4, VH-GROUND_Y);
+      ctx.fillRect(gx+gw, GROUND_Y, 4, VH-GROUND_Y);
+      ctx.fillStyle = C.yoshDark;
+      ctx.fillRect(gx-4, GROUND_Y, 4, 20); ctx.fillRect(gx+gw, GROUND_Y, 4, 20);
+    }
+  }
+  function drawPipe(o){
+    const x=o.x, y=o.y, w=o.w, h=o.h;
+    // body (starts just under the rim)
+    ctx.fillStyle = C.yoshDark;
+    roundRect(x+3, y+13, w-6, h-13, 3); ctx.fill();
+    ctx.fillStyle = C.yosh;
+    roundRect(x+3, y+13, (w-6)*0.44, h-13, 3); ctx.fill();
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 3;
+    roundRect(x+3, y+13, w-6, h-13, 3); ctx.stroke();
+    // rim on top — its top edge sits exactly at o.y, the surface you land on
+    ctx.fillStyle = C.yosh; ctx.strokeStyle = C.ink; ctx.lineWidth = 3;
+    roundRect(x-2, y, w+4, 17, 5); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.yoshLight;
+    roundRect(x+3, y+3, (w+4)*0.36, 4, 2); ctx.fill();
+  }
+  function drawPlatform(p){
+    const x=p.x, y=p.y, w=p.w, bh=46;
+    ctx.fillStyle='rgba(0,0,0,0.10)'; roundRect(x+5, y+8, w, bh, 10); ctx.fill();  // soft shadow
+    ctx.fillStyle=C.wood; ctx.strokeStyle=C.ink; ctx.lineWidth=3;                   // earthy body
+    roundRect(x, y, w, bh, 10); ctx.fill();
+    ctx.fillStyle=C.yosh; roundRect(x, y, w, 16, 10); ctx.fill();                  // grassy top
+    ctx.fillStyle=C.yoshDark; ctx.fillRect(x+3, y+13, w-6, 4);
+    ctx.fillStyle=C.yoshLight; for(let gx=x+9; gx<x+w-9; gx+=26){ ctx.fillRect(gx, y+3, 12, 4); }
+    ctx.strokeStyle=C.ink; ctx.lineWidth=3; roundRect(x, y, w, bh, 10); ctx.stroke();
+  }
+  function drawToken(t){                 // a static gear/cog
+    const r = t.r;
+    ctx.save(); ctx.translate(t.x, t.y);
+    ctx.fillStyle = C.silver; ctx.strokeStyle = C.silverEdge; ctx.lineWidth = 2;
+    const teeth = 7, tw = r*0.5, th = r*0.42;
+    for(let i=0;i<teeth;i++){
+      ctx.save(); ctx.rotate(i/teeth*Math.PI*2);
+      roundRect(-tw/2, -r-th*0.35, tw, th, 2); ctx.fill(); ctx.stroke();
+      ctx.restore();
+    }
+    ctx.beginPath(); ctx.arc(0,0,r,0,7); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.silverDark; ctx.beginPath(); ctx.arc(0,0,r*0.46,0,7); ctx.fill();
+    ctx.fillStyle = C.silverEdge; ctx.beginPath(); ctx.arc(0,0,r*0.2,0,7); ctx.fill();
+    ctx.restore();
+  }
+  function drawRunner(px,py){
+    const blink = player.invuln>0 && (Math.floor(player.invuln*12)%2===0);
+    if(blink) ctx.globalAlpha = 0.4;
+    const swing = Math.sin(player.legPhase)*7, swing2 = Math.sin(player.legPhase+Math.PI)*7;
+    // legs
+    ctx.fillStyle = C.yoshDark;
+    roundRect(px+8, py+PH-12+(player.onGround?Math.max(0,swing):0), 11, 16, 4); ctx.fill();
+    roundRect(px+24, py+PH-12+(player.onGround?Math.max(0,swing2):0), 11, 16, 4); ctx.fill();
+    // body
+    ctx.fillStyle = C.yosh; ctx.strokeStyle = C.ink; ctx.lineWidth = 3;
+    roundRect(px+2, py+10, PW-4, PH-16, 14); ctx.fill(); ctx.stroke();
+    // belly
+    ctx.fillStyle = C.belly;
+    roundRect(px+9, py+22, PW-20, PH-30, 9); ctx.fill();
+    // head
+    ctx.fillStyle = C.yosh;
+    ctx.beginPath(); ctx.arc(px+PW-14, py+14, 15, 0, 7); ctx.fill();
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px+PW-14, py+14, 15, 0, 7); ctx.stroke();
+    // eye (facing right)
+    ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(px+PW-9, py+10, 6, 0, 7); ctx.fill();
+    ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(px+PW-7, py+10, 3, 0, 7); ctx.fill();
+    // little cheek
+    ctx.fillStyle = 'rgba(244,169,199,0.8)'; ctx.beginPath(); ctx.arc(px+PW-18, py+18, 3.2, 0, 7); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+  function drawBiker(px,py){
+    const blink = player.invuln>0 && (Math.floor(player.invuln*12)%2===0);
+    if(blink) ctx.globalAlpha = 0.5;
+    const wr = 16, wy = py + PH - wr;   // wheels sit at the player's feet, so the whole bike jumps/falls with them
+    const w1 = px+6, w2 = px+PW+2;
+    const frameC = GEAR_COLORS[Math.max(0, Math.min(player.bikeGears, MAX_GEARS) - 1)] || C.coinDark;
+    // wheels + spokes
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 4;
+    [w1,w2].forEach(wx=>{
+      ctx.beginPath(); ctx.arc(wx, wy, wr, 0, 7); ctx.stroke();
+      ctx.save(); ctx.translate(wx,wy); ctx.rotate(player.wheelPhase);
+      ctx.strokeStyle = frameC; ctx.lineWidth = 2;
+      for(let k=0;k<4;k++){ ctx.rotate(Math.PI/4); ctx.beginPath(); ctx.moveTo(0,0); ctx.lineTo(0,wr-2); ctx.stroke(); }
+      ctx.restore(); ctx.strokeStyle = C.ink; ctx.lineWidth = 4;
+    });
+    // frame — colour shifts with each speed level
+    ctx.strokeStyle = frameC; ctx.lineWidth = 5;
+    ctx.beginPath();
+    ctx.moveTo(w1,wy); ctx.lineTo(px+PW/2, wy-18); ctx.lineTo(w2, wy);
+    ctx.moveTo(px+PW/2, wy-18); ctx.lineTo(px+PW-2, wy-20);
+    ctx.stroke();
+    // rider body (lean forward)
+    const by = wy-46;
+    ctx.fillStyle = C.yosh; ctx.strokeStyle = C.ink; ctx.lineWidth = 3;
+    roundRect(px+8, by, PW-14, 30, 12); ctx.fill(); ctx.stroke();
+    ctx.fillStyle = C.yosh; ctx.beginPath(); ctx.arc(px+PW-8, by+2, 13, 0, 7); ctx.fill();
+    ctx.strokeStyle = C.ink; ctx.lineWidth = 3; ctx.beginPath(); ctx.arc(px+PW-8, by+2, 13, 0, 7); ctx.stroke();
+    ctx.fillStyle = C.white; ctx.beginPath(); ctx.arc(px+PW-4, by-1, 5, 0, 7); ctx.fill();
+    ctx.fillStyle = C.ink; ctx.beginPath(); ctx.arc(px+PW-2, by-1, 2.6, 0, 7); ctx.fill();
+    ctx.globalAlpha = 1;
+  }
+
+  function render(){
+    ctx.save();
+    if(shakeT>0){ const m=shakeT*10; ctx.translate((Math.random()-0.5)*m,(Math.random()-0.5)*m); }
+    drawSky();
+    for(const c of clouds) drawCloud(c.x, c.y, c.s);
+    drawHills();
+    drawGround();
+    for(const p of platforms) drawPlatform(p);
+    for(const t of tokens) drawToken(t);
+    for(const o of obstacles) drawPipe(o);
+    // player rides higher; when on bike, feet on wheels
+    if(player.onBike) drawBiker(PLAYER_X, player.y);
+    else drawRunner(PLAYER_X, player.y);
+    ctx.restore();
+    if(flash>0){ ctx.fillStyle = 'rgba(255,201,60,'+(flash*0.9)+')'; ctx.fillRect(0,0,VW,VH); }
+  }
+
+  // ---- HUD ----
+  const hudDist=document.getElementById('hud-dist'), hudTok=document.getElementById('hud-tok'),
+        hudBest=document.getElementById('hud-best'), meter=document.getElementById('bike-meter'),
+        bikeLabel=document.getElementById('bike-label');
+  function updateHUD(){
+    hudDist.textContent = Math.floor(distance)+' m';
+    hudTok.textContent = gears;
+    hudBest.textContent = best+' m';
+    if(player.bikeGears === 0){ bikeLabel.textContent = 'on foot'; meter.style.width = Math.round(gearMeter/FIRST_BIKE*100)+'%'; }
+    else if(player.bikeGears < MAX_GEARS){ bikeLabel.textContent = player.bikeGears+'-speed'; meter.style.width = Math.round(gearMeter/PER_GEAR*100)+'%'; }
+    else { bikeLabel.textContent = MAX_GEARS+'-speed'; meter.style.width = '100%'; }
+  }
+
+  // ---- main loop ----
+  let last = 0;
+  function frame(now){
+    if(!last) last = now;
+    let dt = (now-last)/1000; last = now;
+    if(dt > 0.05) dt = 0.05;   // clamp (tab switches)
+    update(dt);
+    render();
+    updateHUD();
+    requestAnimationFrame(frame);
+  }
+  // initial idle pose
+  player.y = GROUND_Y - PH;
+  requestAnimationFrame(frame);
+})();
+</script>
+</body>
+</html>
